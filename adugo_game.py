@@ -1,4 +1,7 @@
 from enum import Enum
+from copy import deepcopy
+import sys, subprocess
+
 class PointStatus(Enum):
     Blank = 0
     Dog = 1
@@ -40,7 +43,7 @@ class GameBoard:
             ([33,PointStatus.Blank], [28, 31, 35]),
             ([35,PointStatus.Blank], [29, 33]),
         ]
-        self.gameBoardCopy = self.gameBoard.copy
+        self.gameBoardCopy = deepcopy(self.gameBoard)
 
     def startGame(self):
         while(True):
@@ -51,7 +54,12 @@ class GameBoard:
                 print("Jaguar won!")
                 break
             print(self.gameBoard)
-        print("Game ended")
+        print("Do you want to restart game? ( y/n )")
+        decision = input()
+        if decision ==  'y':
+            self.restartGame()
+            self.startGame()
+        else: sys.exit()
 
     def jaguarMove(self):
         possibleJumpPositions, possibleMovePositions = self.canJaguarMove(self.gameBoard[self.jaguarPosition()])
@@ -61,7 +69,7 @@ class GameBoard:
         if not possiblePositions: return False
         move =  -1
         while(move not in possiblePositions):
-            print("Possible moves:")
+            print("JAGUAR - Possible moves:")
             for i in possibleJumpPositions:
                 print("     * jump to {1} through {0}".format(i[0],i[1]))
             for i in possibleMovePositions:
@@ -74,10 +82,16 @@ class GameBoard:
         return True
 
     def dogsMove(self):
-        return True
+        if self.countDogs() < 6: return False
+        dogsPositions = self.dogsPosition()
+        print("DOGS - Possible moves:")
+        for dog in dogsPositions:
+            possiblePositions = self.canMove(self.gameBoard[dog])
+            if possiblePositions: print('     * Dog {} can move to {}'.format(dog, possiblePositions))
 
     def restartGame(self):
-        self.gameBoard = self.gameBoardCopy.copy
+        subprocess.run(['clear'])
+        self.gameBoard = self.gameBoardCopy
 
     def giveGameBoard(self):
         return self.gameBoard
