@@ -10,6 +10,8 @@ class PointStatus(Enum):
 class GameBoard:
     def __init__(self):
         self.whoseMove = 'JAGUAR'
+        self.MAX_DOGS = 14
+        # Game board is list of tuple ([point_id, point_status], [other connected points])
         self.gameBoard = [
             ([1, PointStatus.Dog], [2,6,7]),
             ([2, PointStatus.Dog], [1,3,7]),
@@ -44,16 +46,52 @@ class GameBoard:
             ([35,PointStatus.Blank], [29, 33]),
         ]
         self.gameBoardCopy = deepcopy(self.gameBoard)
+    
+    def min_max_jaguar(self, game_state, depth, is_jaguar_move):
+        '''
+            Min-max for Jaguar player. Jaguar tires to eliminate dogs 
+        '''
+        if depth == 0 or self.game_over():
+            return self.countDogs()
+
+        if is_jaguar_move:
+            minEval = self.MAX_DOGS
+            for jaguar_pos in self.possible_jaguar_moves(tupled=False):
+                next_state = GameBoard()
+
+    def min_max_dogs(self, game_state, depth, is_dog_move):
+        '''
+            Min-max for Dogs is to minimalize Jaguar moves
+        '''
+
+
+    def game_over(self):
+        '''
+            Returns True if game is over or False otherwise
+        '''
+        return self.jaguar_game_over() or self.dog_game_over()
+
+    def jaguar_game_over(self):
+        '''
+            Returns True if jaguar lost
+        '''
+        return not self.possible_jaguar_moves(tupled=False)
+
+    def dog_game_over(self):
+        '''
+            Returns True if dogs lost 
+        '''
+        return self.countDogs() < 10
 
     def startGame(self):
         while(True):
             self.printBoard()
-            if not self.jaguarMove():
+            if not self.user_jaguar_move():
                 print("Dogs won!")
                 break
             subprocess.run(['clear'])
             self.printBoard()
-            if not self.dogsMove():
+            if not self.user_dog_move():
                 print("Jaguar won!")
                 break
             subprocess.run(['clear'])
@@ -64,8 +102,8 @@ class GameBoard:
             self.startGame()
         else: sys.exit()
 
-    def jaguarMove(self):
-        possibleJumpPositions, possibleMovePositions = self.canJaguarMove(self.gameBoard[self.jaguarPosition()])
+    def user_jaguar_move(self):
+        possibleJumpPositions, possibleMovePositions = self.possible_jaguar_moves()
         possibleJumpPositionsTab = [i[1] for i in possibleJumpPositions] 
         possiblePositions = possibleJumpPositionsTab + possibleMovePositions
         if not possiblePositions: return False
@@ -77,20 +115,48 @@ class GameBoard:
             for i in possibleMovePositions:
                 print("     * move to {}".format(i))
             move = int(input())
-        jagPos = self.jaguarPosition()
+        jagPos = self.jaguar_position()
         self.gameBoard[move-1][0][1], self.gameBoard[jagPos][0][1] = self.gameBoard[jagPos][0][1],  self.gameBoard[move-1][0][1]
         if move in possibleJumpPositionsTab:
             jumpedPointPosition = next(i[0] for i in possibleJumpPositions if i[1] == move)
             self.gameBoard[jumpedPointPosition-1][0][1] = PointStatus.Blank
         return True
 
-    def dogsMove(self):
+
+    def jaguar_move(self, point, game_state=None):
+        '''
+            Moves Jaguar to given point (int). If game_state is None then this function uses
+            self game board. If game_state is provided then this function returns new game_state 
+            as deep copy of previous. This scenario is used for AI.
+        '''
+        return_state = False
+        if game_state != None:
+            game_state = deepcopy(game_state)
+            return_state = True
+        else:
+            game_state = self.gameBoard
+        
+        # Extract possible jump positions
+        possibleJumpPositions, _ = self.possible_jaguar_moves()
+        possibleJumpPositionsTab = [i[1] for i in possibleJumpPositions] 
+
+        jaguar_pos = self.jaguar_position()
+        game_state[point-1][0][1], game_state[jaguar_pos][0][1] = game_state[jaguar_pos][0][1], game_state[point-1][0][1]
+        if point in possibleJumpPositionsTab:
+            jumpedPointPosition = next(i[0] for i in possibleJumpPositions if i[1] == point)
+            game_state[jumpedPointPosition-1][0][1] = PointStatus.Blank
+
+        if return_state:
+            return game_state
+
+
+    def user_dog_move(self):
         if self.countDogs() < 10: return False
         dogsPositions = self.dogsPosition()
         print("DOGS - Possible moves:")
         dogsPositionsWithMoves = {}
         for dog in dogsPositions:
-            possiblePositions = self.canMove(self.gameBoard[dog])
+            possiblePositions = self.possible_dog_move(self.gameBoard[dog])
             if possiblePositions: print('     * dog {} can move to {}'.format(dog+1, possiblePositions))
             dogsPositionsWithMoves[dog] = possiblePositions
         print('Choose a dog: ')
@@ -110,10 +176,19 @@ class GameBoard:
     def countDogs(self):
         return sum(1 for point in self.gameBoard if point[0][1] == PointStatus.Dog)
     
-    def canMove(self, point):
+    def possible_dog_move(self, point):
+        '''
+            Returns list of all possible moves of a dog in given point
+        '''
         return [i for i in point[1] if self.gameBoard[i-1][0][1] == PointStatus.Blank]
 
-    def canJaguarMove(self, point):
+    def possible_jaguar_moves(self, tupled=True):
+        '''
+            As default returns tuple (list of possible jumps, list of possible moves),
+            If tupled is False then returns list of all possible moves
+        '''
+        point = self.gameBoard[self.jaguar_position()]
+
         # szukamy czy dookoła jaguara są psy
         dogs = [i for i in point[1] if self.gameBoard[i-1][0][1] == PointStatus.Dog]
         # dogsValues zawiera tuple z nr miejsca psa i różnicą pomiędzy numerem jaguara i psa
@@ -129,9 +204,12 @@ class GameBoard:
                 # sprawdzenie czy pole jest puste(blank)
                 if self.gameBoard[inLineBehindDog-1][0][1] == PointStatus.Blank: validBehindDog.append((dog[0],inLineBehindDog))
             except: pass
-        return validBehindDog, self.canMove(point)
+        if tupled:
+            return validBehindDog, self.possible_dog_move(point)
+        else:
+            return [i[1] for i in validBehindDog] + self.possible_dog_move(point)
     
-    def jaguarPosition(self):
+    def jaguar_position(self):
         for point in self.gameBoard:
             if point[0][1] == PointStatus.Jaguar: return point[0][0]-1
     
@@ -176,4 +254,5 @@ class GameBoard:
 
 p = GameBoard()
 p.startGame()
+print(p.game_over())
 
