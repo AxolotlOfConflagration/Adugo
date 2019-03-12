@@ -1,6 +1,6 @@
 from enum import Enum
 from copy import deepcopy
-import sys, subprocess
+import sys, subprocess, pprint
 
 class PointStatus(Enum):
     Blank = 0
@@ -47,13 +47,16 @@ class GameBoard:
 
     def startGame(self):
         while(True):
+            self.printBoard()
             if not self.jaguarMove():
                 print("Dogs won!")
                 break
+            subprocess.run(['clear'])
+            self.printBoard()
             if not self.dogsMove():
                 print("Jaguar won!")
                 break
-            # print(self.gameBoard)
+            subprocess.run(['clear'])
         print("Do you want to restart game? ( y/n )")
         decision = input()
         if decision ==  'y':
@@ -65,7 +68,6 @@ class GameBoard:
         possibleJumpPositions, possibleMovePositions = self.canJaguarMove(self.gameBoard[self.jaguarPosition()])
         possibleJumpPositionsTab = [i[1] for i in possibleJumpPositions] 
         possiblePositions = possibleJumpPositionsTab + possibleMovePositions
-        # jeśli jaguar nie ma ruchu zwróć False
         if not possiblePositions: return False
         move =  -1
         while(move not in possiblePositions):
@@ -75,14 +77,15 @@ class GameBoard:
             for i in possibleMovePositions:
                 print("     * move to {}".format(i))
             move = int(input())
-        self.gameBoard[move-1][0][1], self.gameBoard[self.jaguarPosition()][0][1] = self.gameBoard[self.jaguarPosition()][0][1],  self.gameBoard[move-1][0][1]
+        jagPos = self.jaguarPosition()
+        self.gameBoard[move-1][0][1], self.gameBoard[jagPos][0][1] = self.gameBoard[jagPos][0][1],  self.gameBoard[move-1][0][1]
         if move in possibleJumpPositionsTab:
             jumpedPointPosition = next(i[0] for i in possibleJumpPositions if i[1] == move)
             self.gameBoard[jumpedPointPosition-1][0][1] = PointStatus.Blank
         return True
 
     def dogsMove(self):
-        if self.countDogs() < 6: return False
+        if self.countDogs() < 10: return False
         dogsPositions = self.dogsPosition()
         print("DOGS - Possible moves:")
         dogsPositionsWithMoves = {}
@@ -96,7 +99,6 @@ class GameBoard:
         dogMove = int(input())
         self.gameBoard[dogMove-1][0][1], self.gameBoard[dogNum-1][0][1] = self.gameBoard[dogNum-1][0][1],  self.gameBoard[dogMove-1][0][1]
         return True
-
 
     def restartGame(self):
         subprocess.run(['clear'])
@@ -138,6 +140,39 @@ class GameBoard:
         for point in self.gameBoard:
             if point[0][1] == PointStatus.Dog: dogs.append(point[0][0]-1)
         return dogs
+
+    def printBoard(self):
+        class bcolors:
+            HEADER = '\033[95m'
+            OKBLUE = '\033[94m'
+            OKGREEN = '\033[92m'
+            WARNING = '\033[93m'
+            FAIL = '\033[91m'
+            ENDC = '\033[0m'
+            BOLD = '\033[1m'
+            UNDERLINE = '\033[4m'
+        def chooseColor(num):
+            if self.gameBoard[num-1][0][1] == PointStatus.Blank:
+                return bcolors.OKGREEN+str(self.gameBoard[num-1][0][0])+bcolors.ENDC
+            elif self.gameBoard[num-1][0][1] == PointStatus.Dog:
+                    return bcolors.OKBLUE+str(self.gameBoard[num-1][0][0])+bcolors.ENDC               
+            else: return bcolors.WARNING+str(self.gameBoard[num-1][0][0])+bcolors.ENDC 
+        for i in range(1,26):
+            if i % 5 == 0:
+                print(chooseColor(i))
+                if i % 10 == 0:
+                    print(' | ／  | ＼  | ／  | ＼ |')
+                else:
+                    if i == 25:
+                        print('        {}  | {}'.format(u'_／', u'＼_'))
+                    else:
+                        print(' | ＼  | ／  | ＼  | ／ |')
+            else:
+                if i<10: print(' '+chooseColor(i)+' -- ', end='')
+                else: print(chooseColor(i)+' -- ', end='')
+        print('      {} -- {} -- {}'.format(chooseColor(26),chooseColor(27),chooseColor(28)))
+        print('  {}        |       {}'.format(u'_／', u'＼_'))
+        print('{} -------- {} -------- {}'.format(chooseColor(29),chooseColor(30),chooseColor(31)))
 
 p = GameBoard()
 p.startGame()
