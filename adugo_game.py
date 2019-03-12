@@ -85,9 +85,18 @@ class GameBoard:
         if self.countDogs() < 6: return False
         dogsPositions = self.dogsPosition()
         print("DOGS - Possible moves:")
+        dogsPositionsWithMoves = {}
         for dog in dogsPositions:
             possiblePositions = self.canMove(self.gameBoard[dog])
-            if possiblePositions: print('     * Dog {} can move to {}'.format(dog, possiblePositions))
+            if possiblePositions: print('     * dog {} can move to {}'.format(dog+1, possiblePositions))
+            dogsPositionsWithMoves[dog] = possiblePositions
+        print('Choose a dog: ')
+        dogNum = input()
+        print('Choose move: ')
+        dogMove = input()
+        self.gameBoard[dogMove-1][0][1], self.gameBoard[dogNum-1][0][1] = self.gameBoard[dogNum][0][1],  self.gameBoard[dogMove][0][1]
+        return True
+
 
     def restartGame(self):
         subprocess.run(['clear'])
