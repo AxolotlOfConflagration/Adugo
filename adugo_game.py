@@ -53,7 +53,7 @@ class GameBoard:
             if not self.dogsMove():
                 print("Jaguar won!")
                 break
-            print(self.gameBoard)
+            # print(self.gameBoard)
         print("Do you want to restart game? ( y/n )")
         decision = input()
         if decision ==  'y':
@@ -91,10 +91,10 @@ class GameBoard:
             if possiblePositions: print('     * dog {} can move to {}'.format(dog+1, possiblePositions))
             dogsPositionsWithMoves[dog] = possiblePositions
         print('Choose a dog: ')
-        dogNum = input()
+        dogNum = int(input())
         print('Choose move: ')
-        dogMove = input()
-        self.gameBoard[dogMove-1][0][1], self.gameBoard[dogNum-1][0][1] = self.gameBoard[dogNum][0][1],  self.gameBoard[dogMove][0][1]
+        dogMove = int(input())
+        self.gameBoard[dogMove-1][0][1], self.gameBoard[dogNum-1][0][1] = self.gameBoard[dogNum-1][0][1],  self.gameBoard[dogMove-1][0][1]
         return True
 
 
