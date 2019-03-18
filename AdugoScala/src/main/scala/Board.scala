@@ -1,23 +1,40 @@
-import Board.connections
+import Board._
 import Utils._
 
 case class Board
 (
   jaguar: Int,
-  dogs: Seq[Int]
+  dogs: Seq[Int],
+  turn: Int
 ) {
   def moveJaguar(to: Int): Board = {
-    if (jumps.isEmpty) {
-      if (!canMove(jaguar, to))
-        throw new Exception(s"Can't move jaguar to $to!")
-      copy(jaguar = to)
-    } else {
+    if (hasToJump) {
       if (!canJump(to))
         throw new Exception(s"Jaguar can't jum to $to!")
       val jump = jumps.find(_.to == to).get
       copy(jaguar = jump.to, dogs = dogs.filterNot(_ == jump.over))
+    } else {
+      if (!canMove(jaguar, to))
+        throw new Exception(s"Can't move jaguar to $to!")
+      copy(jaguar = to, turn = turn + 1)
     }
   }
+
+  /**
+    * Jaguar tries to:
+    *   - kill as many dogs as possible
+    *   - has as much space as possible
+    *   - has possible jumps (to kill or escape)
+    */
+  def rateJaguarState: Int = {
+    (maxDogsCount - dogs.length) + moves(jaguar).length + jumps.length + turn
+  }
+
+  def isJaguarDefeated: Boolean = jumps.isEmpty && moves(jaguar).isEmpty
+
+  def areDogsDefeated: Boolean = dogs.length < 10
+
+  def isGameOver: Boolean = isJaguarDefeated || areDogsDefeated
 
   def jumps: Seq[Jump] = for {
     dog <- dogsNeighbours(jaguar)
@@ -30,17 +47,21 @@ case class Board
     if (!canMove(from, to))
       throw new Exception(s"Can't move dog from $from to $to!")
 
-    copy(dogs = dogs.filterNot(_ == from) :+ to)
+    copy(dogs = dogs.filterNot(_ == from) :+ to, turn = turn + 1)
   }
+
+  def hasToJump: Boolean = jumps.nonEmpty
 
   def canJump(to: Int): Boolean = jumps.map(_.to).contains(to)
 
   def canMove(from: Int, to: Int): Boolean = emptyNeighbours(from).contains(to)
 
-  def dogsNeighbours(of: Int): Seq[Int] = Board.connections(of)
+  def movableDogs: Seq[Int] = dogs.filterNot(emptyNeighbours(_).isEmpty)
+
+  def dogsNeighbours(of: Int): Seq[Int] = connections(of)
     .filter(dogs.contains(_))
 
-  def emptyNeighbours(of: Int): Seq[Int] = Board.connections(of)
+  def emptyNeighbours(of: Int): Seq[Int] = connections(of)
     .filterNot(_ == jaguar)
     .filterNot(dogs.contains(_))
 
@@ -61,8 +82,6 @@ case class Board
       val stop = points(node)
 
       sb.append(s"""  <line x1="${start._1}" y1="${start._2}" x2="${stop._1}" y2="${stop._2}" style="stroke:black;stroke-width:2"/>""" + "\n")
-      //      if (connections(index) != Nil)
-      //        sb.append(s"""  <circle cx="${start._1}" cy="${start._2}" r="5" stroke="black" stroke-width="2"/>""" + "\n")
     }
 
     dogs.foreach(dog => {
@@ -82,9 +101,9 @@ case class Board
       .indices
       .map(n => {
         val str = f"$n%2d"
-        if(dogs.contains(n)) str.blue
-        else if(n == jaguar) str.yellow
-        else if(connections(n).isEmpty) ""
+        if (dogs.contains(n)) str.blue
+        else if (n == jaguar) str.yellow
+        else if (connections(n).isEmpty) ""
         else str.white
       })
 
@@ -99,35 +118,45 @@ case class Board
     println(""" | / | \ | / | \ |""")
     println(lines(4))
     println("""      _/ | \_     """)
-    println(fields.slice(25, 30).filterNot(_ == "").mkString(" "*4,"--"," "*4))
+    println(fields.slice(25, 30).filterNot(_ == "").mkString(" " * 4, "--", " " * 4))
     println("""  _/     |    \_  """)
-    println(fields.slice(30, 35).filterNot(_ == "").mkString("-"*6))
+    println(fields.slice(30, 35).filterNot(_ == "").mkString("-" * 6))
 
-//    val lines = for (i <- 0 until 5) yield fields.slice(i * 5, i * 5 + 5).mkString("--")
-//    println(lines(0))
-//    println(""" |\  | / |\  | / |""")
-//    println(""" | \ |/  | \ |/  |""")
-//    println(lines(1))
-//    println(""" | / |\  | / |\  |""")
-//    println(""" |/  | \ |/  | \ |""")
-//    println(lines(2))
-//    println(""" |\  | / |\  | / |""")
-//    println(""" | \ |/  | \ |/  |""")
-//    println(lines(3))
-//    println(""" | / |\  | / |\  |""")
-//    println(""" |/  | \ |/  | \ |""")
-//    println(lines(4))
-//    println("""       / |\       """)
-//    println("""      /  | \      """)
-//    println(fields.slice(25, 30).filterNot(_ == "").mkString(" "*4,"--"," "*4))
-//    println("""   /     |    \   """)
-//    println("""  /      |     \  """)
-//    println(fields.slice(30, 35).filterNot(_ == "").mkString("-"*6))
   }
 }
 
 object Board {
-  val connections = Array(
+  val maxDogsCount: Int = 14
+
+  def minMax(state: Board, depth: Int, isJaguarMove: Boolean): Int = {
+    if (depth == 0 || state.isGameOver) state.rateJaguarState
+    else if (isJaguarMove) {
+      if (state.hasToJump) {
+        state
+          .jumps
+          .map(to => minMax(state.moveJaguar(to.to), depth - 1, !isJaguarMove))
+          .fold(Int.MinValue)(Math.max)
+      }
+      else {
+        state
+          .emptyNeighbours(state.jaguar)
+          .map(to => minMax(state.moveJaguar(to), depth - 1, !isJaguarMove))
+          .fold(Int.MinValue)(Math.max)
+      }
+    } else {
+      var min = Int.MaxValue
+      for {
+        dog <- state.movableDogs
+        move <- state.moves(dog)
+      } {
+        val futureMin = minMax(state.moveDog(dog, move), depth - 1, !isJaguarMove)
+        min = Math.min(min, futureMin)
+      }
+      min
+    }
+  }
+
+  val connections: Array[List[Int]] = Array(
     //0
     List(1, 6, 5),
     List(0, 6, 2),
@@ -170,7 +199,7 @@ object Board {
     List(27, 34, 30),
     Nil,
     List(28, 34, 32)
-  )
+  ).map(_.sorted)
 
-  val start = Board(12, (0 to 14).filterNot(_ == 12).toList)
+  val start = Board(12, (0 to 14).filterNot(_ == 12).toList, 0)
 }
