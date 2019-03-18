@@ -69,7 +69,7 @@ case class Game(depth: Int) {
     val (dog, destination, _) = (for {
       dog <- board.movableDogs
       move <- board.moves(dog)
-    } yield (dog, move, Board.minMax(board.moveDog(dog, move), depth, false)))
+    } yield (dog, move, Board.minMax(board.moveDog(dog, move), depth, Int.MinValue, Int.MaxValue, false)))
       .minBy(_._3)
 
     board = board.moveDog(dog, destination)

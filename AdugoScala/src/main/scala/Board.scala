@@ -128,29 +128,44 @@ case class Board
 object Board {
   val maxDogsCount: Int = 14
 
-  def minMax(state: Board, depth: Int, isJaguarMove: Boolean): Int = {
+  def minMax(state: Board, depth: Int, alpha: Int, beta: Int, isJaguarMove: Boolean): Int = {
+    var a = alpha
+    var b = beta
+
     if (depth == 0 || state.isGameOver) state.rateJaguarState
     else if (isJaguarMove) {
+      var max = Int.MinValue
       if (state.hasToJump) {
-        state
-          .jumps
-          .map(to => minMax(state.moveJaguar(to.to), depth - 1, !isJaguarMove))
-          .fold(Int.MinValue)(Math.max)
+        state.jumps.foreach { jump =>
+          val futureMax = minMax(state.moveJaguar(jump.to), depth - 1, a, b, isJaguarMove = false)
+          max = Math.max(max, futureMax)
+          a = Math.max(a, futureMax)
+          if(b <= a)
+            return max
+        }
       }
       else {
-        state
-          .emptyNeighbours(state.jaguar)
-          .map(to => minMax(state.moveJaguar(to), depth - 1, !isJaguarMove))
-          .fold(Int.MinValue)(Math.max)
+        state.emptyNeighbours(state.jaguar)
+          .foreach { to =>
+            val futureMax = minMax(state.moveJaguar(to), depth - 1, a, b, isJaguarMove = false)
+            max = Math.max(max, futureMax)
+            a = Math.max(a, futureMax)
+            if(b <= a)
+              return max
+          }
       }
+      max
     } else {
       var min = Int.MaxValue
       for {
         dog <- state.movableDogs
         move <- state.moves(dog)
       } {
-        val futureMin = minMax(state.moveDog(dog, move), depth - 1, !isJaguarMove)
+        val futureMin = minMax(state.moveDog(dog, move), depth - 1, a, b, isJaguarMove = true)
         min = Math.min(min, futureMin)
+        b = Math.min(b, futureMin)
+        if(b <= a)
+          return min
       }
       min
     }
