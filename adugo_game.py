@@ -2,7 +2,7 @@ from enum import Enum
 from copy import deepcopy
 import sys, subprocess, pprint
 from typing import List, Optional, Union
-
+from numba import jit, njit
 
 class PointStatus(Enum):
     Blank = 0
@@ -84,6 +84,7 @@ class GameBoard:
         future_board.dog_move(dog, move)
         return future_board
 
+    @jit
     def min_max(self, depth: int, is_jaguar_move: bool, start=False):
         """
             Min-max. When start=True, then for jaguar function returns best move to take;
@@ -146,6 +147,7 @@ class GameBoard:
         """
         return self.count_dogs() < 10
 
+    @jit
     def ai_dog_move(self):
         if self.dog_game_over():
             return False
@@ -191,6 +193,7 @@ class GameBoard:
         self.move_jaguar(move)
         return True
 
+    @jit
     def swap(self, x, y):
         self.game_board[x].status, self.game_board[y].status = self.game_board[y].status, self.game_board[x].status
 
@@ -212,6 +215,7 @@ class GameBoard:
     def dog_move(self, dog, point):
         self.swap(dog, point)
 
+    @njit
     def can_dog_move(self, dog):
         if type(dog) == int:
             return len(self.possible_moves(self.game_board[dog])) != 0
@@ -250,6 +254,7 @@ class GameBoard:
     def count_dogs(self):
         return sum(1 for point in self.game_board if point.status == PointStatus.Dog)
 
+    @jit
     def possible_moves(self, point: Union[int, Point]):
         """
         Returns indices of all blank neighbouring points
