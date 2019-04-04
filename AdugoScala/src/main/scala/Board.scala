@@ -1,5 +1,6 @@
 import Board._
 import Utils._
+import play.api.libs.json._
 
 case class Board
 (
@@ -125,6 +126,10 @@ case class Board
     println(fields.slice(30, 35).filterNot(_ == "").mkString("-" * 6))
 
     println(s"Dogs killed ${maxDogsCount - dogs.length}")
+  }
+
+  def returnBoardState():JsObject = {
+    Json.obj("turn" -> turn, "jaguar" -> jaguar, "dogs" -> dogs)
   }
 }
 
