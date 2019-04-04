@@ -1,10 +1,17 @@
-import io.StdIn._
+import Utils.clear
 
-case class Game(depth: Int) {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
+import scala.io.StdIn._
+
+case class Game(depth: Int, sleepTime: Int = 100) {
   private var board = Board.start
 
   def start = {
-    println("Want to play as jaguar(j) or dogs(d)?")
+    clear
+
+    println("Want to play as jaguar(j), dogs(d) or ai battle(a)?")
     val choice = readChar()
 
     if (choice == 'j') {
@@ -12,10 +19,17 @@ case class Game(depth: Int) {
         humanJaguar()
         aiDogs()
       } while (!board.isGameOver)
-    } else {
+    } else if (choice == 'd') {
       do {
         aiJaguar()
         humanDogs()
+      } while (!board.isGameOver)
+    } else {
+      do {
+        aiJaguar()
+        Thread.sleep(sleepTime)
+        aiDogs()
+        Thread.sleep(sleepTime)
       } while (!board.isGameOver)
     }
 
@@ -66,18 +80,32 @@ case class Game(depth: Int) {
   }
 
   def aiDogs() = if (!board.isGameOver) {
-    val (dog, destination, _) = (for {
+
+    board.print()
+
+    val futureMoves = for {
       dog <- board.movableDogs
       move <- board.moves(dog)
-    } yield (dog, move, Board.minMax(board.moveDog(dog, move), depth, Int.MinValue, Int.MaxValue, false)))
-      .minBy(_._3)
+    } yield Future {
+      (dog, move, Board.minMax(board.moveDog(dog, move), depth, Int.MinValue, Int.MaxValue, isJaguarMove = false))
+    }
+
+    val future = Future.sequence(futureMoves).map(_.minBy(_._3))
+    val (dog, destination, _) = Await.result(future, Duration.Inf)
 
     board = board.moveDog(dog, destination)
   }
 
   def aiJaguar() = if (!board.isGameOver) {
-    var destination = -1
 
+    board.print()
+
+    val destination = if (board.hasToJump) {
+      (for (jump <- board.jumps) yield (jump, Board.minMax(board.moveJaguar(jump.to), depth, Int.MinValue, Int.MaxValue, true))).maxBy(_._2)._1.to
+    }
+    else {
+      (for (move <- board.moves(board.jaguar)) yield (move, Board.minMax(board.moveJaguar(move), depth, Int.MinValue, Int.MaxValue, true))).maxBy(_._2)._1
+    }
 
     board = board.moveJaguar(destination)
   }

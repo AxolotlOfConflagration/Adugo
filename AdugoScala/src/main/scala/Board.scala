@@ -24,13 +24,12 @@ case class Board
     * Jaguar tries to:
     *   - kill as many dogs as possible
     *   - has as much space as possible
-    *   - has possible jumps (to kill or escape)
     */
   def rateJaguarState: Int = {
-    (maxDogsCount - dogs.length) + moves(jaguar).length + jumps.length + turn
+    (maxDogsCount - dogs.length) + moves(jaguar).length + turn
   }
 
-  def isJaguarDefeated: Boolean = jumps.isEmpty && moves(jaguar).isEmpty
+  def isJaguarDefeated: Boolean = moves(jaguar).isEmpty
 
   def areDogsDefeated: Boolean = dogs.length < 10
 
@@ -97,6 +96,9 @@ case class Board
   }
 
   def print(): Unit = {
+
+    clear
+
     val fields = connections
       .indices
       .map(n => {
@@ -122,6 +124,7 @@ case class Board
     println("""  _/     |    \_  """)
     println(fields.slice(30, 35).filterNot(_ == "").mkString("-" * 6))
 
+    println(s"Dogs killed ${maxDogsCount - dogs.length}")
   }
 }
 
@@ -140,7 +143,7 @@ object Board {
           val futureMax = minMax(state.moveJaguar(jump.to), depth - 1, a, b, isJaguarMove = false)
           max = Math.max(max, futureMax)
           a = Math.max(a, futureMax)
-          if(b <= a)
+          if (b <= a)
             return max
         }
       }
@@ -150,7 +153,7 @@ object Board {
             val futureMax = minMax(state.moveJaguar(to), depth - 1, a, b, isJaguarMove = false)
             max = Math.max(max, futureMax)
             a = Math.max(a, futureMax)
-            if(b <= a)
+            if (b <= a)
               return max
           }
       }
@@ -164,7 +167,7 @@ object Board {
         val futureMin = minMax(state.moveDog(dog, move), depth - 1, a, b, isJaguarMove = true)
         min = Math.min(min, futureMin)
         b = Math.min(b, futureMin)
-        if(b <= a)
+        if (b <= a)
           return min
       }
       min
@@ -187,7 +190,7 @@ object Board {
     // 10
     List(5, 6, 11, 16, 15),
     List(6, 12, 16, 10),
-    List(6, 7, 8, 12, 18, 17, 16, 11),
+    List(6, 7, 8, 13, 18, 17, 16, 11),
     List(8, 14, 18, 12),
     List(9, 8, 13, 18, 19),
     // 15
