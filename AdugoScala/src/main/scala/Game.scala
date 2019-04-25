@@ -7,6 +7,7 @@ import scala.io.StdIn._
 
 case class Game(depth: Int, sleepTime: Int = 100) {
   private var board = Board.start
+  private var saveGame = SaveGame("test.txt")
 
   def start = {
     clear
@@ -17,18 +18,24 @@ case class Game(depth: Int, sleepTime: Int = 100) {
     if (choice == 'j') {
       do {
         humanJaguar()
+        saveGame.appendToFile(board.toJson().toString())
         aiDogs()
+        saveGame.appendToFile(board.toJson().toString())
       } while (!board.isGameOver)
     } else if (choice == 'd') {
       do {
         aiJaguar()
+        saveGame.appendToFile(board.toJson().toString())
         humanDogs()
+        saveGame.appendToFile(board.toJson().toString())
       } while (!board.isGameOver)
     } else {
       do {
         aiJaguar()
+        saveGame.appendToFile(board.toJson().toString())
         Thread.sleep(sleepTime)
         aiDogs()
+        saveGame.appendToFile(board.toJson().toString())
         Thread.sleep(sleepTime)
       } while (!board.isGameOver)
     }
@@ -38,6 +45,7 @@ case class Game(depth: Int, sleepTime: Int = 100) {
     } else {
       println("Jaguar wins!")
     }
+    saveGame.closeFile()
   }
 
   def humanDogs() = if (!board.isGameOver) {
