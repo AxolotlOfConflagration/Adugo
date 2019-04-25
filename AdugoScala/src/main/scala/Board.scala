@@ -128,7 +128,7 @@ case class Board
     println(s"Dogs killed ${maxDogsCount - dogs.length}")
   }
 
-  def returnBoardState():JsObject = {
+  def toJson():JsObject = {
     Json.obj("turn" -> turn, "jaguar" -> jaguar, "dogs" -> dogs)
   }
 }

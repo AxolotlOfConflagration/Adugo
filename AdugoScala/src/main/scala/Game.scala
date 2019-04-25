@@ -18,24 +18,24 @@ case class Game(depth: Int, sleepTime: Int = 100) {
     if (choice == 'j') {
       do {
         humanJaguar()
-        saveGame.appendToFile(board.returnBoardState().toString())
+        saveGame.appendToFile(board.toJson().toString())
         aiDogs()
-        saveGame.appendToFile(board.returnBoardState().toString())
+        saveGame.appendToFile(board.toJson().toString())
       } while (!board.isGameOver)
     } else if (choice == 'd') {
       do {
         aiJaguar()
-        saveGame.appendToFile(board.returnBoardState().toString())
+        saveGame.appendToFile(board.toJson().toString())
         humanDogs()
-        saveGame.appendToFile(board.returnBoardState().toString())
+        saveGame.appendToFile(board.toJson().toString())
       } while (!board.isGameOver)
     } else {
       do {
         aiJaguar()
-        saveGame.appendToFile(board.returnBoardState().toString())
+        saveGame.appendToFile(board.toJson().toString())
         Thread.sleep(sleepTime)
         aiDogs()
-        saveGame.appendToFile(board.returnBoardState().toString())
+        saveGame.appendToFile(board.toJson().toString())
         Thread.sleep(sleepTime)
       } while (!board.isGameOver)
     }
