@@ -1,42 +1,45 @@
 import Utils.clear
+import botkop.numsca.Tensor
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.io.StdIn._
 
-case class Game(depth: Int, sleepTime: Int = 100) {
+case class Game(depth: Int, sleepTime: Int = 100, saveGame: Boolean = false) {
   private var board = Board.start
-  private var saveGame = SaveGame("test.txt")
+  private val gameSaver = SaveGame("savedGames.txt")
 
   def start = {
     clear
 
-    println("Want to play as jaguar(j), dogs(d) or ai battle(a)?")
-    val choice = readChar()
+//    println("Want to play as jaguar(j), dogs(d) or ai battle(a)?")
+    val choice = 'q'//readChar()
 
     if (choice == 'j') {
       do {
         humanJaguar()
-        saveGame.appendToFile(board.toJson().toString())
+        if(saveGame)gameSaver.appendToFile(board.toJson().toString())
         aiDogs()
-        saveGame.appendToFile(board.toJson().toString())
+        if(saveGame)gameSaver.appendToFile(board.toJson().toString())
       } while (!board.isGameOver)
     } else if (choice == 'd') {
       do {
         aiJaguar()
-        saveGame.appendToFile(board.toJson().toString())
+        if(saveGame)gameSaver.appendToFile(board.toJson().toString())
         humanDogs()
-        saveGame.appendToFile(board.toJson().toString())
+        if(saveGame)gameSaver.appendToFile(board.toJson().toString())
       } while (!board.isGameOver)
+    } else if (choice == 'q') {
+      qJaguar()
     } else {
       do {
         aiJaguar()
-        saveGame.appendToFile(board.toJson().toString())
-        Thread.sleep(sleepTime)
+        if(saveGame)gameSaver.appendToFile(board.toJson().toString())
+//        Thread.sleep(sleepTime)
         aiDogs()
-        saveGame.appendToFile(board.toJson().toString())
-        Thread.sleep(sleepTime)
+        if(saveGame)gameSaver.appendToFile(board.toJson().toString())
+//        Thread.sleep(sleepTime)
       } while (!board.isGameOver)
     }
 
@@ -45,7 +48,45 @@ case class Game(depth: Int, sleepTime: Int = 100) {
     } else {
       println("Jaguar wins!")
     }
-    saveGame.closeFile()
+    gameSaver.closeFile()
+  }
+
+  def qJaguar(num_episodes: Int = 1, epsilon: Float = 0.7f, learning_rate: Float = 0.1f, gamma: Float = 0.9f) = {
+    var rewards = Seq[Int]()
+    val ql = QLearning()
+
+    for(i <- 0 to num_episodes){
+      print(i.toString+"------------------------------\n\n")
+      board = Board.start
+      var done = false
+      var reward_sum = 0
+
+      do{
+        board.print()
+        val action = ql.policy(board, epsilon)
+        val step = ql.step(board, action) //(next_state, reward, done)
+        reward_sum += step._2
+        val max = {
+          var allActions = Array[Double]()
+          for(action <- ql.ACTIONS){
+            allActions :+= ql.q_values(action, board.jaguar).squeeze()
+          }
+          allActions.max
+        }
+        ql.q_values(action, board.jaguar) += Tensor(learning_rate*(step._2 + gamma*(max - ql.q_values(action, board.jaguar).squeeze())))
+        done = step._3
+        if(step._1 != board.jaguar){
+          var jump = false
+          if(action == 1){
+            jump = true
+          }
+          board = board.moveJaguarQ(step._1, jump)
+          aiDogs()
+        }
+      }while(!done)
+      rewards :+= reward_sum
+    }
+
   }
 
   def humanDogs() = if (!board.isGameOver) {
@@ -89,7 +130,7 @@ case class Game(depth: Int, sleepTime: Int = 100) {
 
   def aiDogs() = if (!board.isGameOver) {
 
-    board.print()
+//    board.print()
 
     val futureMoves = for {
       dog <- board.movableDogs
