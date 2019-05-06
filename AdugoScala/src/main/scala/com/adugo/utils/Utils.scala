@@ -1,3 +1,5 @@
+package com.adugo.utils
+
 import scala.sys.process._
 
 object Utils {
@@ -23,6 +25,6 @@ object Utils {
     def white = s"$WHITE$str$RESET"
   }
 
-  def clear = "clear" !
-  
+  def clear: Int = "clear" !
+
 }
