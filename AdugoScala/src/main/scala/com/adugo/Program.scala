@@ -1,6 +1,7 @@
 package com.adugo
 
 import com.adugo.ai.MinMaxAlphaBetaPruning
+import com.adugo.ai.mcts.MonteCarloPlayer
 import com.adugo.game.{Game, GameSaver}
 import com.adugo.ai.stateEvaluation.BasicStateEvaluators._
 
@@ -12,6 +13,7 @@ object Program {
 
     val minmax = MinMaxAlphaBetaPruning(steps, simpleJaguarStateEvaluator)
     val positionAvareMinMax = MinMaxAlphaBetaPruning(steps, positionAvareStateEvaluator(0.9))
+    val mcts = new MonteCarloPlayer()
 
     Game(positionAvareMinMax, 600).start()
   }

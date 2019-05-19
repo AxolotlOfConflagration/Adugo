@@ -31,7 +31,9 @@ case class Node
 
   def randomPlay(): Node = {
     val rand = new Random(42)
-    rand.shuffle(allPossibleStates).head
+    println(allPossibleStates)
+    if(allPossibleStates.isEmpty) null
+    else rand.shuffle(allPossibleStates).head
   }
 
   def allPossibleStates: List[Node] = {
