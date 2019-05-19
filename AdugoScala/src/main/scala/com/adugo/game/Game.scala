@@ -14,14 +14,14 @@ case class Game(ai: Player, sleepTime: Int = 100, private val gameSaver: Option[
   def start(): Unit = {
     clear
 
-    println("Want to play as jaguar(j), dogs(d) or com.adugo.ai battle(a)?")
+    println("Want to play as jaguar(j), dogs(d) or ai battle(a)?")
     val choice = readChar()
 
     if (choice == 'j') {
       do {
         humanJaguar()
         saveGameState()
-        aiDogs()
+      aiDogs()
         saveGameState()
       } while (!board.isGameOver)
     } else if (choice == 'd') {
