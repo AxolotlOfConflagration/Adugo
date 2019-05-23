@@ -21,7 +21,7 @@ case class Game(ai: Player, sleepTime: Int = 100, private val gameSaver: Option[
       do {
         humanJaguar()
         saveGameState()
-      aiDogs()
+        aiDogs()
         saveGameState()
       } while (!board.isGameOver)
     } else if (choice == 'd') {
@@ -42,6 +42,7 @@ case class Game(ai: Player, sleepTime: Int = 100, private val gameSaver: Option[
       } while (!board.isGameOver)
     }
 
+    board.print()
     if (board.isJaguarDefeated) {
       println("Dogs wins!")
     } else {
@@ -52,7 +53,7 @@ case class Game(ai: Player, sleepTime: Int = 100, private val gameSaver: Option[
   }
 
   private def saveGameState(): Unit = {
-    gameSaver.foreach(_.appendToFile(board.toJson().toString()))
+    gameSaver.foreach(_.appendToFile(board.toJson.toString()))
   }
 
   private def closeGameSaver(): Unit = {

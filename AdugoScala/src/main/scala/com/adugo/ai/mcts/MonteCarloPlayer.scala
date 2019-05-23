@@ -90,9 +90,11 @@ class MonteCarloPlayer extends Player {
       node.parent.winScore = Int.MinValue
       return false
     }
-    while(!node.board.isGameOver) {
+    var x = 0
+    while(!node.board.isGameOver && x < 10) {
       tempNode = tempNode.randomPlay()
       status = tempNode.isJaguarMove
+      x += 1
     }
     status
   }

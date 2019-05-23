@@ -119,9 +119,10 @@ case class Board
     println(fields.slice(30, 35).filterNot(_ == "").mkString("-" * 6))
 
     println(s"Dogs killed ${maxDogsCount - dogs.length}")
+    println(s"Turn: $turn")
   }
 
-  def toJson(): JsObject = {
+  def toJson: JsObject = {
     Json.obj("turn" -> turn, "jaguar" -> jaguar, "dogs" -> dogs)
   }
 }

@@ -6,7 +6,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 
-case class MinMaxAlphaBetaPruning(depth: Int, evaluator: Board => Double) extends Player {
+case class MiniMaxAlphaBetaPruning(depth: Int, evaluator: Board => Double) extends Player {
   /**
     * Chooses best possible move for dogs
     *
