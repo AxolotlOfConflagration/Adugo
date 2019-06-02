@@ -1,6 +1,8 @@
-import Board._
-import Utils._
+package com.adugo.game
+
+import com.adugo.game.Board.{connections, maxDogsCount}
 import play.api.libs.json._
+import com.adugo.utils.Utils._
 
 case class Board
 (
@@ -32,15 +34,6 @@ case class Board
         throw new Exception(s"Can't move jaguar to $to!")
       copy(jaguar = to, turn = turn + 1)
     }
-  }
-
-  /**
-    * Jaguar tries to:
-    *   - kill as many dogs as possible
-    *   - has as much space as possible
-    */
-  def rateJaguarState: Int = {
-    (maxDogsCount - dogs.length) + moves(jaguar).length + turn
   }
 
   def isJaguarDefeated: Boolean = moves(jaguar).isEmpty
@@ -139,58 +132,16 @@ case class Board
     println(fields.slice(30, 35).filterNot(_ == "").mkString("-" * 6))
 
     println(s"Dogs killed ${maxDogsCount - dogs.length}")
+    println(s"Turn: $turn")
   }
 
-  def toJson():JsObject = {
+  def toJson: JsObject = {
     Json.obj("turn" -> turn, "jaguar" -> jaguar, "dogs" -> dogs)
   }
 }
 
 object Board {
   val maxDogsCount: Int = 14
-
-  def minMax(state: Board, depth: Int, alpha: Int, beta: Int, isJaguarMove: Boolean): Int = {
-    var a = alpha
-    var b = beta
-
-    if (depth == 0 || state.isGameOver) state.rateJaguarState
-    else if (isJaguarMove) {
-      var max = Int.MinValue
-      if (state.hasToJump) {
-        state.jumps.foreach { jump =>
-          val futureMax = minMax(state.moveJaguar(jump.to), depth - 1, a, b, isJaguarMove = false)
-          max = Math.max(max, futureMax)
-          a = Math.max(a, futureMax)
-          if (b <= a)
-            return max
-        }
-      }
-      else {
-        state.emptyNeighbours(state.jaguar)
-          .foreach { to =>
-            val futureMax = minMax(state.moveJaguar(to), depth - 1, a, b, isJaguarMove = false)
-            max = Math.max(max, futureMax)
-            a = Math.max(a, futureMax)
-            if (b <= a)
-              return max
-          }
-      }
-      max
-    } else {
-      var min = Int.MaxValue
-      for {
-        dog <- state.movableDogs
-        move <- state.moves(dog)
-      } {
-        val futureMin = minMax(state.moveDog(dog, move), depth - 1, a, b, isJaguarMove = true)
-        min = Math.min(min, futureMin)
-        b = Math.min(b, futureMin)
-        if (b <= a)
-          return min
-      }
-      min
-    }
-  }
 
   val connections: Array[List[Int]] = Array(
     //0

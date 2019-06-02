@@ -1,6 +1,8 @@
+package com.adugo.game
+
 import java.io.FileWriter
 
-case class SaveGame(fileName: String) {
+case class GameSaver(fileName: String) {
 
   private val fw = new FileWriter(fileName, true)
 
