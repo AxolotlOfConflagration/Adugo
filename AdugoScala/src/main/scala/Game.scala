@@ -51,7 +51,7 @@ case class Game(depth: Int, sleepTime: Int = 100, saveGame: Boolean = false) {
     gameSaver.closeFile()
   }
 
-  def qJaguar(num_episodes: Int = 1, epsilon: Float = 0.7f, learning_rate: Float = 0.1f, gamma: Float = 0.9f) = {
+  def qJaguar(num_episodes: Int = 10, epsilon: Float = 0.7f, learning_rate: Float = 0.1f, gamma: Float = 0.9f) = {
     var rewards = Seq[Int]()
     val ql = QLearning()
 
@@ -63,25 +63,30 @@ case class Game(depth: Int, sleepTime: Int = 100, saveGame: Boolean = false) {
 
       do{
         board.print()
+        println(ql.q_values(0))
         val action = ql.policy(board, epsilon)
         val step = ql.step(board, action) //(next_state, reward, done)
-        reward_sum += step._2
-        val max = {
-          var allActions = Array[Double]()
-          for(action <- ql.ACTIONS){
-            allActions :+= ql.q_values(action, board.jaguar).squeeze()
+
+        if(step._1 != 100) {
+
+          reward_sum += step._2
+          val max = {
+            var allActions = Array[Double]()
+            for (action <- ql.ACTIONS) {
+              allActions :+= ql.q_values(action, board.jaguar).squeeze()
+            }
+            allActions.max
           }
-          allActions.max
-        }
-        ql.q_values(action, board.jaguar) += Tensor(learning_rate*(step._2 + gamma*(max - ql.q_values(action, board.jaguar).squeeze())))
-        done = step._3
-        if(step._1 != board.jaguar){
-          var jump = false
-          if(action == 1){
-            jump = true
+          ql.q_values(action, board.jaguar) += Tensor(learning_rate * (step._2 + gamma * (max - ql.q_values(action, board.jaguar).squeeze())))
+          done = step._3
+          if (step._1 != board.jaguar) {
+            var jump = false
+            if (action == 1) {
+              jump = true
+            }
+            board = board.moveJaguarQ(step._1, jump)
+            aiDogs()
           }
-          board = board.moveJaguarQ(step._1, jump)
-          aiDogs()
         }
       }while(!done)
       rewards :+= reward_sum

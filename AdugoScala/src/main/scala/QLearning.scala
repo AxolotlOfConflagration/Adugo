@@ -1,6 +1,5 @@
 import botkop.numsca.Tensor
 import botkop.{numsca => ns}
-import com.sun.xml.internal.ws.api.model.ExceptionType
 
 import scala.util.Random
 
@@ -35,7 +34,10 @@ case class QLearning() {
 
 //    POSSIBLE ACTIONS
     if(action == MOVE){
-      next_state = Random.shuffle(board.moves(board.jaguar)).head
+      next_state = Random.shuffle(board.moves(board.jaguar)).headOption match {
+        case Some(v) => v
+        case _ => 100
+      }
     }else if(action == JUMP){
       if(board.jumps.nonEmpty)next_state = Random.shuffle(board.jumps).head.to
     }
