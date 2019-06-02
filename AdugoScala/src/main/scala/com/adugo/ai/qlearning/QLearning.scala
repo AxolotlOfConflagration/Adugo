@@ -1,5 +1,8 @@
-import botkop.numsca.Tensor
+package com.adugo.ai.qlearning
+
 import botkop.{numsca => ns}
+import ns.Tensor
+import com.adugo.game.Board
 
 import scala.util.Random
 
@@ -9,7 +12,7 @@ case class QLearning() {
 
   val ACTIONS = Array(MOVE, JUMP)
 
-  var q_values: Tensor = ns.zeros(ACTIONS.size, Board.connections.size, 1)
+  var q_values: Tensor = ns.zeros(ACTIONS.length, Board.connections.length, 1)
 
   def policy(board: Board, epsilon: Float): Int = {
     val state = board.jaguar
