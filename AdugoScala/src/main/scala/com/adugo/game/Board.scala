@@ -13,7 +13,20 @@ case class Board
   def moveJaguar(to: Int): Board = {
     if (hasToJump) {
       if (!canJump(to))
-        throw new Exception(s"Jaguar can't jum to $to!")
+        throw new Exception(s"Jaguar can't jump to $to!")
+      val jump = jumps.find(_.to == to).get
+      copy(jaguar = jump.to, dogs = dogs.filterNot(_ == jump.over))
+    } else {
+      if (!canMove(jaguar, to))
+        throw new Exception(s"Can't move jaguar to $to!")
+      copy(jaguar = to, turn = turn + 1)
+    }
+  }
+
+  def moveJaguarQ(to: Int, jump: Boolean): Board = {
+    if (jump) {
+      if (!canJump(to))
+        throw new Exception(s"Jaguar can't jump to $to!")
       val jump = jumps.find(_.to == to).get
       copy(jaguar = jump.to, dogs = dogs.filterNot(_ == jump.over))
     } else {
